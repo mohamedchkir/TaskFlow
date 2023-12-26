@@ -9,7 +9,7 @@ TaskFlow is a collaborative task management platform that emerged from a collabo
 ### Clone the Project
 
 ```bash
-git clone [<repository_url>](https://github.com/mohamedchkir/TaskFlow.git)
+git clone https://github.com/mohamedchkir/TaskFlow.git
 cd taskflow
 ```
 
