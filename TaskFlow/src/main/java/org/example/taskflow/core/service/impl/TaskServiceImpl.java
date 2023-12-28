@@ -5,12 +5,20 @@ import org.example.taskflow.core.service.TaskService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
     @Override
     public List<TaskDTO> getAllTasks() {
-        return null;
+        List<Task> tasks = taskRepository.findAll();
+        if (tasks.isEmpty()){
+            throw new RuntimeException("No tasks found");
+        }
+        return tasks.stream()
+                .map(taskMapper::taskToTaskDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
