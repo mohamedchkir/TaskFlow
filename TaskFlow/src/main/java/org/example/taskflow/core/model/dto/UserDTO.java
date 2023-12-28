@@ -1,10 +1,13 @@
 package org.example.taskflow.core.model.dto;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
-@Data
+@Setter
+@Getter
 public class UserDTO {
 
     private Long id;
@@ -14,6 +17,5 @@ public class UserDTO {
     private String email;
     private Integer jetons;
     private RoleDTO role;
-    private List<TaskDTO> tasks;
     private List<JetonUsageDTO> jetonUsages;
 }
