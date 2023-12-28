@@ -1,6 +1,11 @@
 package org.example.taskflow.core.service.impl;
 
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.example.taskflow.core.mapper.TaskMapper;
 import org.example.taskflow.core.model.dto.TaskDTO;
+import org.example.taskflow.core.model.entity.Task;
+import org.example.taskflow.core.repository.TaskRepository;
 import org.example.taskflow.core.service.TaskService;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +15,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
+
+    private final TaskMapper taskMapper;
+    private final TaskRepository taskRepository;
     @Override
     public List<TaskDTO> getAllTasks() {
         List<Task> tasks = taskRepository.findAll();
