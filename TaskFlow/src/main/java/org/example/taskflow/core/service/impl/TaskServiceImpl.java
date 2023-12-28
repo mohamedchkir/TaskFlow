@@ -7,7 +7,10 @@ import org.example.taskflow.core.model.dto.TaskDTO;
 import org.example.taskflow.core.model.entity.Task;
 import org.example.taskflow.core.repository.TaskRepository;
 import org.example.taskflow.core.service.TaskService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,7 +25,7 @@ public class TaskServiceImpl implements TaskService {
     public List<TaskDTO> getAllTasks() {
         List<Task> tasks = taskRepository.findAll();
         if (tasks.isEmpty()){
-            throw new RuntimeException("No tasks found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No Task found");
         }
         return tasks.stream()
                 .map(taskMapper::taskToTaskDTO)
@@ -31,7 +34,11 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskDTO getTaskById(Long taskId) {
-        return null;
+        Task task = taskRepository.findById(taskId).orElse(null);
+        if (task == null){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found");
+        }
+        return taskMapper.taskToTaskDTO(task);
     }
 
     @Override
