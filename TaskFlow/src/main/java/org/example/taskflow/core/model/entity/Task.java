@@ -35,11 +35,11 @@ public class Task {
     private Date dueDate;
 
     @ManyToOne
-    @JoinColumn(name = "created_by_id")  // Different name for createdBy join column
+    @JoinColumn(name = "created_by_id")
     private User createdBy;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")  // Different name for user join column
+    @JoinColumn(name = "user_id")
     private User user;
 
     @OneToOne(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
