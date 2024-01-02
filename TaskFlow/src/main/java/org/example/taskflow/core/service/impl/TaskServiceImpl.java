@@ -3,23 +3,26 @@ package org.example.taskflow.core.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.example.taskflow.common.helper.Validation.ValidateTask;
 import org.example.taskflow.core.mapper.TaskMapper;
-import org.example.taskflow.core.model.dto.StoreTaskDTO;
-import org.example.taskflow.core.model.dto.TagDTO;
-import org.example.taskflow.core.model.dto.TaskDTO;
-import org.example.taskflow.core.model.dto.UserDTO;
+import org.example.taskflow.core.mapper.UserMapper;
+import org.example.taskflow.core.model.dto.*;
+import org.example.taskflow.core.model.entity.JetonUsage;
 import org.example.taskflow.core.model.entity.Task;
+import org.example.taskflow.core.model.entity.User;
+import org.example.taskflow.core.repository.JetonUsageRepository;
 import org.example.taskflow.core.repository.TaskRepository;
+import org.example.taskflow.core.repository.UserRepository;
 import org.example.taskflow.core.service.TagService;
 import org.example.taskflow.core.service.TaskService;
 import org.example.taskflow.core.service.UserService;
+import org.example.taskflow.shared.Enum.JetonUsageAction;
 import org.example.taskflow.shared.Enum.TaskStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -95,7 +98,53 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public void deleteTask(Long taskId) {
+    public void deleteTask(Long taskId, Long userId) {
+        Task task = taskRepository.findById(taskId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"task not found"));
+
+        UserDTO user = userService.getUserById(userId);
+        UserDTO taskCreatedBy = userService.getUserById(task.getCreatedBy().getId());
+
+        if (!Objects.equals(taskCreatedBy.getId(), user.getId()) && !"admin".equals(user.getRole().getName())) {
+            if (!Objects.equals(task.getUser().getId(), user.getId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "you cannot delete this task");
+            }
+
+            if (task.getJetonUsage()!= null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"this task cannot be deleted, replaced task");
+            }
+
+            if (user.getJetons() == 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"you dont have any jeton to make this action");
+            }
+
+            JetonUsageDTO lastDeletedJetonUsage = user.getJetonUsages().stream()
+                    .filter(jetonUsage -> jetonUsage.getAction().equals(JetonUsageAction.DELETE))
+                    .max(Comparator.comparing(JetonUsageDTO::getActionDate)).orElse(null);
+
+            if (lastDeletedJetonUsage != null) {
+                Date actionDate = lastDeletedJetonUsage.getActionDate();
+
+                // Convert the Date to Instant and then to LocalDate
+                LocalDate lastActionDate = actionDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+                if (lastActionDate.plusDays(30).isAfter(LocalDate.now())) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"You cannot use jeton to delete; the last action of delete is within 30 days");
+                }
+            }
+
+            User user1 = UserMapper.INSTANCE.userDTOToUser(user);
+
+            JetonUsage jetonUsage = new JetonUsage();
+            jetonUsage.setAction(JetonUsageAction.DELETE);
+
+            validateTask.performUsageJeton(task, user1, jetonUsage);
+
+            throw new ResponseStatusException(HttpStatus.OK,"wait for admin to approve");
+
+        }
+
+        taskRepository.delete(task);
+        throw new ResponseStatusException(HttpStatus.OK,"task deleted");
 
     }
 }
