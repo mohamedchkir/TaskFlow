@@ -1,7 +1,6 @@
 package org.example.taskflow.core.service;
 
-import org.example.taskflow.core.model.dto.StoreTaskDTO;
-import org.example.taskflow.core.model.dto.TaskDTO;
+import org.example.taskflow.core.model.dto.*;
 
 import java.util.List;
 
@@ -13,7 +12,11 @@ public interface TaskService {
 
     TaskDTO createTask(StoreTaskDTO storeTaskDTO);
 
-    TaskDTO updateTask(Long taskId, TaskDTO taskDTO);
+    TaskDTO updateStatus(Long taskId, updateTaskStatusDto updateTaskStatusDto , UserDTO userDTO);
 
-    void deleteTask(Long taskId);
+    TaskDTO updateAssignTo(Long id, UpdateTaskAssignToDto updateTaskAssignToDto, UserDTO User);
+
+    void deleteTask(Long taskId, Long userId);
+
+    TaskDTO updateTask(Long id, UpdateTaskDto updateTaskDto, UserDTO User);
 }

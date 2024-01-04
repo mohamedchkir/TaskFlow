@@ -1,7 +1,14 @@
 package org.example.taskflow.common.helper.Validation;
 
+import lombok.RequiredArgsConstructor;
+import org.example.taskflow.core.mapper.TaskMapper;
 import org.example.taskflow.core.model.dto.StoreTaskDTO;
 import org.example.taskflow.core.model.dto.TagDTO;
+import org.example.taskflow.core.model.entity.JetonUsage;
+import org.example.taskflow.core.model.entity.Task;
+import org.example.taskflow.core.model.entity.User;
+import org.example.taskflow.core.repository.JetonUsageRepository;
+import org.example.taskflow.core.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -12,8 +19,13 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class ValidateTask {
-        public void validateTask(StoreTaskDTO taskDTO) {
+
+    private final JetonUsageRepository jetonUsageRepository;
+    private final UserRepository userRepository;
+
+    public void validateTask(StoreTaskDTO taskDTO) {
         validateTaskDuration(taskDTO.getAssignDate(), taskDTO.getDueDate());
         isTaskNotInThePast(taskDTO.getAssignDate());
         hasMinimumTags(taskDTO);
@@ -31,7 +43,7 @@ public class ValidateTask {
         if (assignDate.compareTo(dueDate) > 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Assign date must be before due date");
         }
-        if (duration.toDays() > 3){
+        if (duration.toDays() > 3) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Task duration must be 3 days maximum");
         }
     }
@@ -44,7 +56,18 @@ public class ValidateTask {
         }
     }
 
+    public void performUsageJeton(Task task, User user, JetonUsage jetonUsage) {
+        jetonUsage.setActionDate(new java.util.Date());
+        jetonUsage.setUser(user);
+        jetonUsage.setTask(task);
 
+        jetonUsageRepository.save(jetonUsage);
+
+        user.setJetons(user.getJetons() - 1);
+        userRepository.save(user);
+
+        TaskMapper.INSTANCE.taskToTaskDTO(task);
+    }
 
 
 }

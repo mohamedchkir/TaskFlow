@@ -6,9 +6,11 @@ import org.example.taskflow.core.mapper.TaskMapper;
 import org.example.taskflow.core.mapper.UserMapper;
 import org.example.taskflow.core.model.dto.*;
 import org.example.taskflow.core.model.entity.JetonUsage;
+import org.example.taskflow.core.model.entity.Tag;
 import org.example.taskflow.core.model.entity.Task;
 import org.example.taskflow.core.model.entity.User;
 import org.example.taskflow.core.repository.JetonUsageRepository;
+import org.example.taskflow.core.repository.TagRepository;
 import org.example.taskflow.core.repository.TaskRepository;
 import org.example.taskflow.core.repository.UserRepository;
 import org.example.taskflow.core.service.TagService;
@@ -34,6 +36,8 @@ public class TaskServiceImpl implements TaskService {
     private final ValidateTask validateTask;
     private final UserService userService;
     private final TagService tagService;
+    private final TagRepository tagRepository;
+
 
     @Override
     public List<TaskDTO> getAllTasks() {
@@ -91,11 +95,64 @@ public class TaskServiceImpl implements TaskService {
         return taskMapper.INSTANCE.taskToTaskDTO(task);
     }
 
+    @Override
+    public TaskDTO updateStatus(Long taskId, updateTaskStatusDto updateTaskStatusDto, UserDTO userDTO) {
+        Task task = taskRepository.findById(taskId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"task not found"));
+
+        UserDTO user = userService.getUserById(userDTO.getId());
+
+        if (!Objects.equals(task.getUser().getId(),user.getId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE,"you cannot update status of this task, you dont have the right permission");
+        }
+
+        if (updateTaskStatusDto.getStatus().equals(TaskStatus.OUTDATED)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"you cannot set status to outdated");
+        }
+
+        if (task.getStatus() != updateTaskStatusDto.getStatus() && updateTaskStatusDto.getStatus().equals(TaskStatus.DONE) && task.getDueDate().before(new Date())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"you cannot set status to done after due date");
+        }
+
+        task.setStatus(updateTaskStatusDto.getStatus());
+
+        Task update = taskRepository.save(task);
+        return TaskMapper.INSTANCE.taskToTaskDTO(update);
+    }
 
     @Override
-    public TaskDTO updateTask(Long taskId, TaskDTO taskDTO) {
-        return null;
+    public TaskDTO updateAssignTo(Long id, UpdateTaskAssignToDto updateTaskAssignToDto, UserDTO User) {
+        Task task = taskRepository.findById(id).orElseThrow(() -> new RuntimeException("task not found"));
+        UserDTO assignTo = userService.getUserById(updateTaskAssignToDto.getUser().getId());
+        UserDTO authUser = userService.getUserById(User.getId());
+        if (!Objects.equals(authUser.getRole().getName(), "admin")) {
+            if (!Objects.equals(task.getUser().getId(), authUser.getId())) {
+                throw new RuntimeException("you cannot update a task not assign to you");
+            }
+
+            if (task.getJetonUsage() != null) {
+                throw new RuntimeException("this task cannot be updated, replaced task");
+            }
+
+            if (authUser.getJetons() == 0) {
+                throw new RuntimeException("you dont have any jeton to make this action");
+            }
+
+            JetonUsage jetonUsage = new JetonUsage();
+            jetonUsage.setAction(JetonUsageAction.UPDATE);
+
+            User user = UserMapper.INSTANCE.userDTOToUser(authUser);
+
+            validateTask.performUsageJeton(task, user, jetonUsage);
+
+            return TaskMapper.INSTANCE.taskToTaskDTO(task);
+        }
+
+        User userAssignedTo = UserMapper.INSTANCE.userDTOToUser(assignTo);
+        task.setUser(userAssignedTo);
+        taskRepository.save(task);
+        return TaskMapper.INSTANCE.taskToTaskDTO(task);
     }
+
 
     @Override
     public void deleteTask(Long taskId, Long userId) {
@@ -147,4 +204,41 @@ public class TaskServiceImpl implements TaskService {
         throw new ResponseStatusException(HttpStatus.OK,"task deleted");
 
     }
+
+    @Override
+    public TaskDTO updateTask(Long id, UpdateTaskDto updateTaskDto, UserDTO User) {
+        Task task = taskRepository.findById(id).orElseThrow(() -> new RuntimeException("task not found"));
+        UserDTO authUser = userService.getUserById(User.getId());
+
+        if (authUser.getRole().getName().equals("user") && !Objects.equals(task.getCreatedBy().getId(), authUser.getId())) {
+            throw new RuntimeException("you cannot update this task, you dont have the right permission");
+        }
+
+        if (isDurationMoreThanThreeDays(updateTaskDto.getAssignDate(), updateTaskDto.getDueDate())) {
+            throw new RuntimeException("invalid duration or more than 3 days");
+        }
+
+        Task newTask = TaskMapper.INSTANCE.updateTaskDTOToTask(updateTaskDto);
+        newTask.setId(id);
+        newTask.setStatus(task.getStatus());
+        newTask.setUser(task.getUser());
+        newTask.setCreatedBy(task.getCreatedBy());
+        newTask.setJetonUsage(task.getJetonUsage());
+
+        // retrieve and validate tags:
+        List<Tag> tags = updateTaskDto.getTags()
+                .stream()
+                .map(tagDto -> tagRepository.findById(tagDto.getId()).orElseThrow(() -> new RuntimeException("tag not found: " + tagDto.getId())))
+                .toList();
+        task.setTags(tags);
+        newTask.setTags(tags);
+
+        Task update = taskRepository.save(newTask);
+        return TaskMapper.INSTANCE.taskToTaskDTO(update);
+    }
+
+    private Boolean isDurationMoreThanThreeDays(LocalDate startDate, LocalDate endDate) {
+        return startDate.isAfter(endDate) || startDate.plusDays(3).isBefore(endDate);
+    }
+
 }
