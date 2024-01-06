@@ -241,4 +241,14 @@ public class TaskServiceImpl implements TaskService {
         return startDate.isAfter(endDate) || startDate.plusDays(3).isBefore(endDate);
     }
 
+    public void ChangeStatusToOutdated() {
+        List<Task> tasks = taskRepository.findAll();
+        for (Task task : tasks) {
+            if (task.getDueDate().before(new Date()) && task.getStatus() != TaskStatus.DONE) {
+                task.setStatus(TaskStatus.OUTDATED);
+                taskRepository.save(task);
+            }
+        }
+    }
+
 }
