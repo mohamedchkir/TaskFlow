@@ -16,7 +16,9 @@ public interface TaskService {
 
     TaskDTO updateAssignTo(Long id, UpdateTaskAssignToDto updateTaskAssignToDto, UserDTO User);
 
-    void deleteTask(Long taskId, Long userId);
+    public void deleteTask(Long taskId, Long userId);
 
     TaskDTO updateTask(Long id, UpdateTaskDto updateTaskDto, UserDTO User);
+
+    public void ChangeStatusToOutdated();
 }
