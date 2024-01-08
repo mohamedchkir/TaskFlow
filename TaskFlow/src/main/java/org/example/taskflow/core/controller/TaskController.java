@@ -41,14 +41,14 @@ public class TaskController {
         return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{taskId}")
+    @PutMapping("task/{taskId}/user/{userId}")
     public ResponseEntity<TaskDTO> updateTask(
             @PathVariable Long taskId,
-            @RequestBody UpdateTaskDto updateTaskDTO,
-            @RequestBody UserDTO userDTO) {
+            @PathVariable Long userId,
+            @RequestBody UpdateTaskDto updateTaskDTO) {
 
         try {
-            TaskDTO updatedTask = taskService.updateTask(taskId, updateTaskDTO, userDTO);
+            TaskDTO updatedTask = taskService.updateTask(taskId, updateTaskDTO, userId);
             return ResponseEntity.ok(updatedTask);
         } catch (RuntimeException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -61,14 +61,14 @@ public class TaskController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PatchMapping("/{taskId}/status")
+    @PutMapping("/{taskId}/status/user/{userId}")
     public ResponseEntity<TaskDTO> updateTaskStatus(
             @PathVariable Long taskId,
-            @RequestBody updateTaskStatusDto updateTaskStatusDTO,
-            @RequestBody UserDTO userDTO) {
+            @PathVariable Long userId,
+            @RequestBody updateTaskStatusDto updateTaskStatusDTO) {
 
         try {
-            TaskDTO updatedTask = taskService.updateStatus(taskId, updateTaskStatusDTO, userDTO);
+            TaskDTO updatedTask = taskService.updateStatus(taskId, updateTaskStatusDTO, userId);
             return ResponseEntity.ok(updatedTask);
         } catch (ResponseStatusException ex) {
             return ResponseEntity.status(ex.getStatusCode()).body(null);

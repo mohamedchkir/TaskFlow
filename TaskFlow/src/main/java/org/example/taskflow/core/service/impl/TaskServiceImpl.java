@@ -87,19 +87,19 @@ public class TaskServiceImpl implements TaskService {
 
         storeTaskDTO.setTags(tags);
 
-        // Map and save the task
+
         Task task = taskMapper.INSTANCE.storeTaskDTOToTask(storeTaskDTO);
         taskRepository.save(task);
 
-        // Map and return the task DTO
+
         return taskMapper.INSTANCE.taskToTaskDTO(task);
     }
 
     @Override
-    public TaskDTO updateStatus(Long taskId, updateTaskStatusDto updateTaskStatusDto, UserDTO userDTO) {
+    public TaskDTO updateStatus(Long taskId, updateTaskStatusDto updateTaskStatusDto, Long userId) {
         Task task = taskRepository.findById(taskId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"task not found"));
 
-        UserDTO user = userService.getUserById(userDTO.getId());
+        UserDTO user = userService.getUserById(userId);
 
         if (!Objects.equals(task.getUser().getId(),user.getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE,"you cannot update status of this task, you dont have the right permission");
@@ -206,9 +206,9 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskDTO updateTask(Long id, UpdateTaskDto updateTaskDto, UserDTO User) {
+    public TaskDTO updateTask(Long id, UpdateTaskDto updateTaskDto, Long UserID) {
         Task task = taskRepository.findById(id).orElseThrow(() -> new RuntimeException("task not found"));
-        UserDTO authUser = userService.getUserById(User.getId());
+        UserDTO authUser = userService.getUserById(UserID);
 
         if (authUser.getRole().getName().equals("user") && !Objects.equals(task.getCreatedBy().getId(), authUser.getId())) {
             throw new RuntimeException("you cannot update this task, you dont have the right permission");
@@ -250,5 +250,6 @@ public class TaskServiceImpl implements TaskService {
             }
         }
     }
+
 
 }

@@ -12,13 +12,13 @@ public interface TaskService {
 
     TaskDTO createTask(StoreTaskDTO storeTaskDTO);
 
-    TaskDTO updateStatus(Long taskId, updateTaskStatusDto updateTaskStatusDto , UserDTO userDTO);
+    TaskDTO updateStatus(Long taskId, updateTaskStatusDto updateTaskStatusDto , Long userId);
 
     TaskDTO updateAssignTo(Long id, UpdateTaskAssignToDto updateTaskAssignToDto, UserDTO User);
 
     public void deleteTask(Long taskId, Long userId);
 
-    TaskDTO updateTask(Long id, UpdateTaskDto updateTaskDto, UserDTO User);
+    TaskDTO updateTask(Long id, UpdateTaskDto updateTaskDto, Long UserId);
 
     public void ChangeStatusToOutdated();
 }

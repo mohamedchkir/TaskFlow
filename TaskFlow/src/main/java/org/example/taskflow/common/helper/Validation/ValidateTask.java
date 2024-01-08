@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -57,7 +58,7 @@ public class ValidateTask {
     }
 
     public void performUsageJeton(Task task, User user, JetonUsage jetonUsage) {
-        jetonUsage.setActionDate(new java.util.Date());
+        jetonUsage.setActionDate(LocalDateTime.now());
         jetonUsage.setUser(user);
         jetonUsage.setTask(task);
 

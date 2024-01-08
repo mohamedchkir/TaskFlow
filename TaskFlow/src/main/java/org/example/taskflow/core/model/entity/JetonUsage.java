@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.example.taskflow.shared.Enum.JetonUsageAction;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -29,7 +30,7 @@ public class JetonUsage {
     private JetonUsageAction action;
 
     @Column(name = "action_date")
-    private Date actionDate;
+    private LocalDateTime actionDate;
 
     @OneToOne
     @JoinColumn(name = "task_id", referencedColumnName = "id")
